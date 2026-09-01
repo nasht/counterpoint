@@ -68,7 +68,11 @@ export const PROVIDERS = {
   ollama: {
     label: "Ollama (local)",
     needsKey: false,
-    defaultModel: "llama3.1",
+    // No hardcoded default: a slug the user has never pulled just 404s. The
+    // adapter asks Ollama what is installed and uses that.
+    defaultModel: "",
+    resolvesOwnModel: true,
+    modelHint: "Blank uses the first model installed in Ollama. Pull one with `ollama pull qwen3:8b`.",
     defaultBaseUrl: "http://localhost:11434",
     call: ollama.call,
   },
@@ -99,7 +103,9 @@ export async function runAnalysis({ provider, model, apiKey, baseUrl, system, us
   }
 
   const resolvedModel = model || p.defaultModel;
-  if (!resolvedModel) throw new ProviderError("bad_response", "No model configured - set one in Settings.");
+  if (!resolvedModel && !p.resolvesOwnModel) {
+    throw new ProviderError("bad_response", "No model configured - set one in Settings.");
+  }
   onProgress(`Asking ${resolvedModel}…`);
   return p.call({
     model: resolvedModel,

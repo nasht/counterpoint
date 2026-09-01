@@ -51,9 +51,11 @@ async function reflectProvider() {
   $("model-hint").textContent =
     provider === "openrouter"
       ? `Blank uses the free default: ${p.defaultModel}. A free key (no card) from openrouter.ai/keys is all you need.`
-      : p.defaultModel
-        ? `Blank uses the default: ${p.defaultModel}`
-        : "Required for this provider.";
+      : p.modelHint
+        ? p.modelHint
+        : p.defaultModel
+          ? `Blank uses the default: ${p.defaultModel}`
+          : "Required for this provider.";
   populateFreeModels(provider);
   $("baseurl").placeholder = p.defaultBaseUrl || "https://my-server.example/v1";
   // A custom server has no default to fall back on, so say so.
