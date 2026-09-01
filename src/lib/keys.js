@@ -30,6 +30,3 @@ export async function setKey(provider, key, remember) {
   }
 }
 
-export async function hasKey(provider) {
-  return (await getKey(provider)) !== null;
-}

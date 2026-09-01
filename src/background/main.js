@@ -40,6 +40,12 @@ async function analyse({ tabId, force }) {
   const { cp_settings: settings = {} } = await api.storage.local.get("cp_settings");
   const provider = settings.provider ?? "openrouter";
   const p = PROVIDERS[provider];
+  if (!p) {
+    throw new ProviderError(
+      "bad_response",
+      `Unknown provider "${provider}" in settings - pick one again in the Settings tab.`
+    );
+  }
   // Leave the model blank when unset - runAnalysis resolves the default and,
   // for OpenRouter, walks the free-model fallbacks.
   const model = settings.model || "";
@@ -52,7 +58,9 @@ async function analyse({ tabId, force }) {
   const article = await extractArticle(tabId);
   const system = await getSystemPrompt();
 
-  const key = await cacheKey(article.url, `${provider}/${model || "default"}`, system);
+  // Hash the extracted text, not just the URL: two different selections on one
+  // page (or a live blog / SPA route) share a URL but are different articles.
+  const key = await cacheKey(article.url, `${provider}/${model || "default"}`, system + article.text);
   if (!force) {
     const cached = await cacheGet(key);
     if (cached) return { article: summariseArticle(article), analysis: cached, cached: true };
@@ -94,7 +102,11 @@ function summariseArticle(a) {
   };
 }
 
-api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Only our own panel may drive analysis. Without this, any co-installed
+  // extension could message us to extract and return the user's page content
+  // and burn their API credits.
+  if (sender.id !== api.runtime.id || sender.tab) return false;
   if (msg?.type !== "CP_ANALYSE") return false;
   analyse(msg)
     .then((result) => sendResponse({ ok: true, ...result }))

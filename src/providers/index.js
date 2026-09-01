@@ -21,7 +21,8 @@ export class ProviderError extends Error {
   constructor(kind, message) {
     super(message);
     this.name = "ProviderError";
-    this.kind = kind; // auth | rate_limit | context_length | network | refusal | bad_response
+    // auth | rate_limit | context_length | network | refusal | bad_response | model_gated
+    this.kind = kind;
   }
 }
 
@@ -119,13 +120,25 @@ export async function httpError(res) {
   } catch {
     /* ignore */
   }
-  // Not an auth problem: some hosted models are gated to specific apps, and
-  // retired slugs 404 - both mean "this model, not your key".
+  // Callers that want to retry with a different request shape inspect these.
+  const tag = (err) => Object.assign(err, { status: res.status, detail });
+  return tag(classify(res, detail));
+}
+
+function classify(res, detail) {
+  // Auth first: a revoked or mistyped key often produces a 403 whose body also
+  // names a model, and misreading that as "gated" sends us round the whole
+  // fallback list before reporting the wrong cause.
+  if (res.status === 401 || /\b(api[_ -]?key|unauthori[sz]ed|invalid.*token|authentication)\b/i.test(detail)) {
+    return new ProviderError("auth", `Authentication failed (${res.status}). Check your API key. ${detail}`);
+  }
+  // Some hosted models are gated to specific apps, and retired slugs 404 -
+  // both mean "this model, not your key".
   if ((res.status === 403 || res.status === 404) && /model|harness|endpoint/i.test(detail)) {
     return new ProviderError("model_gated", `This model isn't available to plain API callers (${res.status}). ${detail}`);
   }
-  if (res.status === 401 || res.status === 403) {
-    return new ProviderError("auth", `Authentication failed (${res.status}). Check your API key. ${detail}`);
+  if (res.status === 403) {
+    return new ProviderError("auth", `Authentication failed (403). Check your API key. ${detail}`);
   }
   if (res.status === 429) {
     return new ProviderError("rate_limit", `Rate limited (429). Wait a moment and retry. ${detail}`);

@@ -76,7 +76,8 @@
     return best ?? null;
   }
 
-  api.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (sender.id !== api.runtime.id) return; // ignore other extensions
     if (msg?.type !== "CP_EXTRACT") return;
     const result = extract();
     if (!result) {

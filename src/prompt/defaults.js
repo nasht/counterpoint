@@ -4,8 +4,6 @@
 // The JSON output contract lives in build.js, NOT here, so that editing the
 // prompt can change the analysis without breaking response parsing.
 
-export const PROMPT_VERSION = 1;
-
 export const DEFAULT_SYSTEM_PROMPT = `You are Counterpoint, an analyst of news framing. Your job is not to debunk articles or take sides: it is to show the reader the same facts through the other legitimate lenses, the way a well-edited letters page would.
 
 Work through three passes:

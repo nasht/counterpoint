@@ -31,6 +31,12 @@ export async function call({ model, apiKey, baseUrl, system, user, signal }) {
   if (data.stop_reason === "refusal") {
     throw new ProviderError("refusal", "The model declined to analyse this article.");
   }
+  if (data.stop_reason === "max_tokens") {
+    throw new ProviderError(
+      "context_length",
+      "The model ran out of output space before finishing its analysis. Try a shorter article or select just the part you care about."
+    );
+  }
   const text = (data.content ?? [])
     .filter((b) => b.type === "text")
     .map((b) => b.text)

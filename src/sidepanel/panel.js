@@ -98,32 +98,45 @@ async function populateFreeModels(provider) {
 }
 
 // Settings autosave - no Save button to forget.
-async function saveSettings() {
+//
+// Every field is read SYNCHRONOUSLY before the first await, and saves are
+// serialised behind one promise chain. Otherwise two overlapping saves (the
+// apikey `change` that fires as focus leaves, plus the provider `change` from
+// the same click) can read the key typed for provider A and store it under
+// provider B - i.e. post your OpenAI key to OpenRouter.
+let saveChain = Promise.resolve();
+function saveSettings() {
   const provider = getProvider();
   const remember = $("remember").checked;
-  await api.storage.local.set({
-    cp_settings: {
-      provider,
-      model: $("model").value.trim(),
-      baseUrl: $("baseurl").value.trim(),
-      remember,
-    },
-  });
+  const model = $("model").value.trim();
+  const baseUrl = $("baseurl").value.trim();
   const typedKey = $("apikey").value.trim();
-  if (typedKey) {
-    await setKey(provider, typedKey, remember);
-    $("apikey").value = "";
-    await reflectProvider();
-  } else if (PROVIDERS[provider].needsKey) {
-    // Re-store the existing key under the (possibly changed) remember mode.
-    const existing = await getKey(provider);
-    if (existing) await setKey(provider, existing, remember);
-  }
-  flash("settings-status", "Saved.");
+  $("apikey").value = ""; // consume it now so no later save can re-read it
+  saveChain = saveChain.then(async () => {
+    await api.storage.local.set({ cp_settings: { provider, model, baseUrl, remember } });
+    if (typedKey) {
+      await setKey(provider, typedKey, remember);
+      await reflectProvider();
+    } else if (PROVIDERS[provider].needsKey) {
+      // Re-store the existing key under the (possibly changed) remember mode.
+      const existing = await getKey(provider);
+      if (existing) await setKey(provider, existing, remember);
+    }
+    flash("settings-status", "Saved.");
+  });
+  return saveChain;
 }
 for (const id of ["model", "baseurl", "apikey", "remember"]) {
   $(id).addEventListener("change", saveSettings);
 }
+
+$("forget-key").addEventListener("click", async () => {
+  const provider = getProvider();
+  await setKey(provider, null, false);
+  $("apikey").value = "";
+  await reflectProvider();
+  flash("settings-status", `Forgot the ${PROVIDERS[provider].label} key.`);
+});
 
 /* ---------- prompt ---------- */
 async function loadPrompt() {
@@ -161,9 +174,11 @@ api.runtime.onMessage.addListener((msg) => {
 const WATCHDOG_MS = 5 * 60 * 1000;
 
 async function run(force) {
+  if (running) return; // ↻ during a run would fire a second paid request
   const btn = $("analyse");
   const status = $("status");
   btn.disabled = true;
+  $("reanalyse").disabled = true;
   running = true;
   $("empty-hint").hidden = true;
   $("results").hidden = true;
@@ -180,7 +195,11 @@ async function run(force) {
         setTimeout(() => reject(new Error("Timed out after 5 minutes. A free-tier model may be overloaded - try again, or set a faster model in Settings.")), WATCHDOG_MS)
       ),
     ]);
-    if (!res) throw new Error("No response from background script.");
+    if (!res) {
+      throw new Error(
+        "The background worker stopped before answering (it may have been shut down mid-request). Try again - a cached result is not saved in this case."
+      );
+    }
     if (!res.ok) {
       status.classList.add("error");
       status.textContent = res.error;
@@ -195,6 +214,7 @@ async function run(force) {
     status.textContent = e.message ?? String(e);
   } finally {
     btn.disabled = false;
+    $("reanalyse").disabled = false;
     running = false;
   }
 }
@@ -232,18 +252,24 @@ function render({ article, analysis, cached }) {
   /* bias axes */
   const bias = el("div", "card");
   bias.append(el("h2", null, "Lens check"));
-  for (const [name, axis] of Object.entries(analysis.bias ?? {})) {
+  let axesShown = 0;
+  for (const [name, raw] of Object.entries(analysis.bias ?? {})) {
+    // Models vary: {score, why} is the contract, but a bare number is common.
+    const score = typeof raw === "number" ? raw : Number(raw?.score);
+    const why = typeof raw === "object" && raw ? raw.why : null;
+    if (!Number.isFinite(score)) continue; // skip junk rather than render 0/exemplary
     const row = el("div", "axis");
     row.append(el("span", "name", name));
     const bar = el("div", "bar");
     const fill = el("span");
-    fill.style.width = `${(Math.max(0, Math.min(4, axis.score ?? 0)) / 4) * 100}%`;
+    fill.style.width = `${(Math.max(0, Math.min(4, score)) / 4) * 100}%`;
     bar.append(fill);
     row.append(bar);
-    if (axis.why) row.append(el("p", "why", axis.why));
+    if (why) row.append(el("p", "why", why));
     bias.append(row);
+    axesShown++;
   }
-  root.append(bias);
+  if (axesShown) root.append(bias);
 
   /* frame */
   if (analysis.frame) {
