@@ -25,7 +25,9 @@ async function analyse({ tabId, force }) {
   const { cp_settings: settings = {} } = await api.storage.local.get("cp_settings");
   const provider = settings.provider ?? "openrouter";
   const p = PROVIDERS[provider];
-  const model = settings.model || p.defaultModel;
+  // Leave the model blank when unset - runAnalysis resolves the default and,
+  // for OpenRouter, walks the free-model fallbacks.
+  const model = settings.model || "";
 
   const apiKey = await getKey(provider);
   if (p.needsKey && !apiKey) {
@@ -35,7 +37,7 @@ async function analyse({ tabId, force }) {
   const article = await extractArticle(tabId);
   const system = await getSystemPrompt();
 
-  const key = await cacheKey(article.url, `${provider}/${model}`, system);
+  const key = await cacheKey(article.url, `${provider}/${model || "default"}`, system);
   if (!force) {
     const cached = await cacheGet(key);
     if (cached) return { article: summariseArticle(article), analysis: cached, cached: true };

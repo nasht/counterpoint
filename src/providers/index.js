@@ -2,6 +2,18 @@ import * as anthropic from "./anthropic.js";
 import * as openai from "./openai.js";
 import * as openrouter from "./openrouter.js";
 import * as ollama from "./ollama.js";
+import { api } from "../lib/env.js";
+
+// Free OpenRouter models to try in order when the user hasn't set a model.
+// Some :free slugs are gated to specific apps or get retired with no
+// machine-readable signal, so the default walks this list and remembers
+// whichever model actually answered.
+export const FREE_FALLBACKS = [
+  "nvidia/nemotron-3.5-lightning:free",
+  "thinkingmachines/inkling-small:free",
+  "liquid/lfm-2.5-2.6b:free",
+  "poolside/laguna-s-2.1:free",
+];
 
 // Normalised error taxonomy - the UI recovers differently for each kind.
 export class ProviderError extends Error {
@@ -31,7 +43,7 @@ export const PROVIDERS = {
     label: "OpenRouter",
     needsKey: true,
     // A capable no-cost model; the Settings tab offers the live :free list.
-    defaultModel: "thinkingmachines/inkling:free",
+    defaultModel: FREE_FALLBACKS[0],
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     call: openrouter.call,
   },
@@ -47,6 +59,12 @@ export const PROVIDERS = {
 export async function runAnalysis({ provider, model, apiKey, baseUrl, system, user, signal }) {
   const p = PROVIDERS[provider];
   if (!p) throw new ProviderError("bad_response", `Unknown provider: ${provider}`);
+
+  // Blank model + OpenRouter: self-healing free default.
+  if (!model && provider === "openrouter") {
+    return callWithFreeFallbacks(p, { apiKey, baseUrl: baseUrl || p.defaultBaseUrl, system, user, signal });
+  }
+
   const resolvedModel = model || p.defaultModel;
   if (!resolvedModel) throw new ProviderError("bad_response", "No model configured - set one in Settings.");
   return p.call({
@@ -59,6 +77,29 @@ export async function runAnalysis({ provider, model, apiKey, baseUrl, system, us
   });
 }
 
+async function callWithFreeFallbacks(p, opts) {
+  const { cp_or_free_model } = await api.storage.local.get("cp_or_free_model");
+  const candidates = [...new Set([cp_or_free_model, ...FREE_FALLBACKS].filter(Boolean))];
+  let lastError = null;
+  for (const model of candidates) {
+    try {
+      const result = await p.call({ ...opts, model });
+      if (model !== cp_or_free_model) await api.storage.local.set({ cp_or_free_model: model });
+      return { ...result, model };
+    } catch (e) {
+      if (e instanceof ProviderError && e.kind === "model_gated") {
+        lastError = e;
+        continue; // gated or retired slug - try the next free model
+      }
+      throw e;
+    }
+  }
+  throw new ProviderError(
+    "model_gated",
+    `None of the default free models are currently available (${lastError?.message ?? "no detail"}). Pick a model explicitly in Settings.`
+  );
+}
+
 // Shared helper: map an HTTP failure to a ProviderError.
 export async function httpError(res) {
   let detail = "";
@@ -66,6 +107,11 @@ export async function httpError(res) {
     detail = (await res.text()).slice(0, 500);
   } catch {
     /* ignore */
+  }
+  // Not an auth problem: some hosted models are gated to specific apps, and
+  // retired slugs 404 - both mean "this model, not your key".
+  if ((res.status === 403 || res.status === 404) && /model|harness|endpoint/i.test(detail)) {
+    return new ProviderError("model_gated", `This model isn't available to plain API callers (${res.status}). ${detail}`);
   }
   if (res.status === 401 || res.status === 403) {
     return new ProviderError("auth", `Authentication failed (${res.status}). Check your API key. ${detail}`);
