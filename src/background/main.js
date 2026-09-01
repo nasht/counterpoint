@@ -60,12 +60,15 @@ async function analyse({ tabId, force }) {
 
   // Hash the extracted text, not just the URL: two different selections on one
   // page (or a live blog / SPA route) share a URL but are different articles.
+  const user = buildUserMessage(article);
   // Include the base URL: with the custom provider, the same model name on two
-  // different servers is two different results.
+  // different servers is two different results. Hash the whole user message
+  // rather than the article text, so a change to the JSON output contract
+  // invalidates old entries instead of serving results missing new fields.
   const key = await cacheKey(
     article.url,
     `${provider}/${settings.baseUrl || "default"}/${model || "default"}`,
-    system + article.text
+    system + user
   );
   if (!force) {
     const cached = await cacheGet(key);
@@ -82,7 +85,7 @@ async function analyse({ tabId, force }) {
       apiKey,
       baseUrl: settings.baseUrl || undefined,
       system,
-      user: buildUserMessage(article),
+      user,
       signal: controller.signal,
       onProgress: progress,
     }));

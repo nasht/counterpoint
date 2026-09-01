@@ -227,6 +227,16 @@ async function run(force) {
   }
 }
 
+// Informational purposes read neutral; persuasion and promotion read as a
+// caution. Kept out of render() so the mapping is easy to find and adjust.
+const INTENT_CLASS = {
+  inform: "good",
+  explain: "good",
+  persuade: "warn",
+  provoke: "bad",
+  promote: "bad",
+};
+
 function el(tag, cls, text) {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
@@ -258,26 +268,60 @@ function render({ article, analysis, cached }) {
   }
 
   /* bias axes */
+  // A bare bar reads as "bad" whatever it says, so every bar carries its score,
+  // a word for what that score means, and a colour keyed to severity.
+  const AXIS_MEANING = {
+    framing: "is interpretation presented as fact?",
+    sourcing: "how many distinct interests are quoted?",
+    emphasis: "what leads, and what is buried?",
+    language: "loaded terms and emotive framing",
+  };
+  const SCORE_WORD = ["exemplary", "minor", "noticeable", "strong", "severe"];
+
   const bias = el("div", "card");
   bias.append(el("h2", null, "Lens check"));
+  bias.append(el("p", "hint", "0 = exemplary, 4 = severe. Higher means the article leans harder on that axis."));
   let axesShown = 0;
   for (const [name, raw] of Object.entries(analysis.bias ?? {})) {
     // Models vary: {score, why} is the contract, but a bare number is common.
     const score = typeof raw === "number" ? raw : Number(raw?.score);
     const why = typeof raw === "object" && raw ? raw.why : null;
     if (!Number.isFinite(score)) continue; // skip junk rather than render 0/exemplary
+    const clamped = Math.max(0, Math.min(4, score));
     const row = el("div", "axis");
-    row.append(el("span", "name", name));
+    const label = el("span", "name", name);
+    const meaning = AXIS_MEANING[String(name).toLowerCase()];
+    if (meaning) label.title = meaning;
+    row.append(label);
     const bar = el("div", "bar");
     const fill = el("span");
-    fill.style.width = `${(Math.max(0, Math.min(4, score)) / 4) * 100}%`;
+    fill.style.width = `${(clamped / 4) * 100}%`;
     bar.append(fill);
     row.append(bar);
+    // Numeric score plus the word for it - the bar alone doesn't say which
+    // direction is bad, and colour alone isn't accessible.
+    row.append(el("span", "score", `${clamped}/4 ${SCORE_WORD[Math.round(clamped)]}`));
+    row.dataset.severity = String(Math.round(clamped));
     if (why) row.append(el("p", "why", why));
     bias.append(row);
     axesShown++;
   }
   if (axesShown) root.append(bias);
+
+  /* what the piece is built to do */
+  const intent = analysis.intent;
+  if (intent && (intent.reads_as || intent.why)) {
+    const card = el("div", "card");
+    card.append(el("h2", null, "What it's built to do"));
+    if (intent.reads_as) {
+      const line = el("p", "intent-line");
+      line.append(el("span", `intent-tag ${INTENT_CLASS[String(intent.reads_as).toLowerCase()] ?? "other"}`, String(intent.reads_as)));
+      if (intent.emotion) line.append(document.createTextNode(`aiming for: ${intent.emotion}`));
+      card.append(line);
+    }
+    if (intent.why) card.append(el("p", null, intent.why));
+    root.append(card);
+  }
 
   /* frame */
   if (analysis.frame) {

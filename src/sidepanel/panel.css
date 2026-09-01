@@ -5,6 +5,7 @@
   --line: #e5e7eb;
   --accent: #e94560;
   --accent2: #16a085;
+  --warn: #d68910;
   --card: #f8f9fb;
 }
 @media (prefers-color-scheme: dark) {
@@ -15,6 +16,7 @@
     --line: #2f3b5c;
     --accent: #e94560;
     --accent2: #4ecca3;
+    --warn: #e0a458;
     --card: #1b2747;
   }
 }
@@ -113,11 +115,35 @@ button:disabled { opacity: 0.5; cursor: default; }
 .card p { margin: 0 0 6px; }
 .card .grounded { font-size: 12px; color: var(--muted); }
 
-.axis { display: grid; grid-template-columns: 84px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.axis { display: grid; grid-template-columns: 84px 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
 .axis .name { font-size: 12px; font-weight: 600; text-transform: capitalize; }
 .axis .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .axis .bar span { display: block; height: 100%; background: var(--accent); }
+.axis .score { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .axis .why { grid-column: 1 / -1; font-size: 12px; color: var(--muted); margin: -4px 0 2px; }
+
+/* Severity colour is a second cue only - the score and its word carry the
+   meaning on their own, for colour-blind readers and greyscale alike. */
+.axis[data-severity="0"] .bar span,
+.axis[data-severity="1"] .bar span { background: var(--accent2); }
+.axis[data-severity="2"] .bar span { background: var(--warn); }
+.axis[data-severity="3"] .bar span,
+.axis[data-severity="4"] .bar span { background: var(--accent); }
+
+.intent-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.intent-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+.intent-tag.good { background: var(--accent2); }
+.intent-tag.warn { background: var(--warn); }
+.intent-tag.bad { background: var(--accent); }
+.intent-tag.other { background: var(--muted); }
 
 .claims li { margin-bottom: 4px; }
 .claims .tag {

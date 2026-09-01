@@ -13,13 +13,18 @@ passes through anyone's server but your model provider's.
 ## What it does
 
 - **Lens check** - four independent 0-4 ratings (framing, sourcing, emphasis,
-  language), each justified with a quote from the article. Deliberately *not*
-  a left/right score.
+  language), each justified with a quote from the article, each labelled with
+  its score and what that score means (0 = exemplary, 4 = severe). Deliberately
+  *not* a left/right score.
+- **What it's built to do** - whether the piece reads as written to inform,
+  explain, persuade, provoke, or promote, and which emotion (if any) the tone
+  is working to produce.
 - **The frame** - whose interests the article centres, and who is affected
   but absent.
 - **Voices** - alternative readings grounded only in facts the article itself
-  states, each owned by a nameable constituency. Genuinely neutral articles
-  get zero voices, on purpose.
+  states, each owned by a nameable constituency and written as attribution
+  ("renters may well welcome..."), never as the tool's own opinion. Genuinely
+  neutral articles get zero voices, on purpose.
 - **In fairness** - the article's single strongest point, so the tool isn't
   just a fault-finder.
 - **Claims** - the article's assertions, tagged fact vs. interpretation.

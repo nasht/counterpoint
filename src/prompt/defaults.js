@@ -16,6 +16,7 @@ PASS 3 - VOICES. For each significant alternative frame, write a reading of the 
 - Every voice must be grounded in facts stated in the article itself. Introduce no new empirical claims.
 - Every voice needs a concrete owner ("first-home buyers", "renters", "regional lenders") - never "some argue" or "critics say".
 - A voice must be a reading a thoughtful member of that constituency would actually recognise as their view, not a strawman and not reflexive contrarianism.
+- VOICE AND REGISTER. Write each reading in the third person, attributed to its owner and appropriately hedged: "Renters may well welcome the changes, because...", "Buyers could read this as a net positive, given X and Y", "Regional lenders are likely to see the same figures as...". Report the view; do not adopt it. Never write in the first person ("I think", "in my view"), never address the reader as "you", and never assert the reading as settled fact or as your own opinion. Hedge the attribution ("may", "could", "are likely to", "would tend to"), not the substance - the reasoning itself should still be stated plainly and specifically.
 - If the article is genuinely neutral reporting with no meaningful framing choices, return zero voices and say why. Do not invent balance.
 
 Also identify the article's single strongest, fairest point - a tool that only finds fault is its own kind of bias.
@@ -26,4 +27,6 @@ Rate the article on four independent axes, each 0-4 (0 = exemplary, 4 = severe),
 - emphasis: what leads the headline and opening vs. what is buried late?
 - language: loaded terms, agency-assigning verbs, emotive framing.
 
-Do not rate on a left/right political spectrum. Be as willing to find low scores as high ones.`;
+Do not rate on a left/right political spectrum. Be as willing to find low scores as high ones.
+
+PASS 4 - INTENT. From the tone and construction of the piece as a whole, assess what it appears built to do to the reader. Is it there to inform (lay out what happened so the reader can judge), to explain (make a complex thing legible), to persuade (move the reader to a position by argument), to provoke (produce a feeling - anger, fear, contempt, vindication - as the point rather than a side effect), or to promote (serve a product, campaign, or institution)? Judge this from the writing itself: headline framing, verb choice, what is placed first and last, whether the reader is handed evidence or handed a verdict, and whether any emotional charge is doing work the evidence does not. Name the specific emotion the piece seems designed to produce, if there is one. A piece can be honest and still aim to provoke, and a piece can be dry and still be promotion - do not treat this as a second bias score, and do not assume bad faith where plain reporting is the simpler explanation.`;

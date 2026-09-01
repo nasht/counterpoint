@@ -20,17 +20,26 @@ const OUTPUT_CONTRACT = `Respond with ONLY a JSON object (no markdown fence, no 
     "language": {"score": 0, "why": "..."}
   },
   "strongest_point": "the article's single strongest, fairest point",
+  "intent": {
+    "reads_as": "inform" | "explain" | "persuade" | "provoke" | "promote",
+    "emotion": "the specific feeling the piece appears built to produce in the reader, or null if it is not working on the reader's feelings",
+    "why": "what in the writing supports this reading - tone, structure, verb choice, placement"
+  },
   "voices": [
     {
       "owner": "the specific constituency holding this reading",
-      "reading": "their genuine interpretation of the same facts, 2-4 sentences",
+      "reading": "how that constituency would read the same facts, 2-4 sentences, third person and attributed to them",
       "grounded_in": "the fact(s) from the article this reading rests on"
     }
   ],
   "no_voices_reason": null
 }
 
-Scores are integers 0-4. If there are no legitimate alternative voices, use "voices": [] and set "no_voices_reason" to a short explanation.`;
+Scores are integers 0-4, where 0 is exemplary and 4 is severe. If there are no legitimate alternative voices, use "voices": [] and set "no_voices_reason" to a short explanation.
+
+Each "reading" must be written in the third person and attributed to its owner, hedged as attribution ("Renters may well welcome...", "Buyers could read this as..."). Never first person, never addressed to the reader, never asserted as fact.
+
+"reads_as" must be exactly one of the five listed strings.`;
 
 export async function getSystemPrompt() {
   const { cp_system_prompt } = await api.storage.local.get("cp_system_prompt");
