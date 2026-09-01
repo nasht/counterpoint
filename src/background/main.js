@@ -23,7 +23,7 @@ async function extractArticle(tabId) {
 
 async function analyse({ tabId, force }) {
   const { cp_settings: settings = {} } = await api.storage.local.get("cp_settings");
-  const provider = settings.provider ?? "anthropic";
+  const provider = settings.provider ?? "openrouter";
   const p = PROVIDERS[provider];
   const model = settings.model || p.defaultModel;
 

@@ -30,7 +30,8 @@ export const PROVIDERS = {
   openrouter: {
     label: "OpenRouter",
     needsKey: true,
-    defaultModel: "",
+    // A capable no-cost model; the Settings tab offers the live :free list.
+    defaultModel: "thinkingmachines/inkling:free",
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     call: openrouter.call,
   },

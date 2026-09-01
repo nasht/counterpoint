@@ -39,14 +39,18 @@ bash scripts/build.sh
 
 ## Bring your own model
 
-Configure in the panel's **Settings** tab:
+**Free by default.** Out of the box Counterpoint uses OpenRouter's free tier -
+sign up at [openrouter.ai/keys](https://openrouter.ai/keys) (no credit card),
+paste the key into Settings, done. Free models are rate-limited and slower,
+and a small free model gives noticeably shallower analysis than a frontier
+one - upgrade the model slug whenever you like.
 
 | Provider | Key | Notes |
 |---|---|---|
+| OpenRouter (default) | free signup | defaults to a `:free` model; the model field suggests the current free list, or set any paid slug e.g. `anthropic/claude-opus-5` |
 | Anthropic | required | defaults to `claude-opus-5` |
 | OpenAI | required | defaults to `gpt-4o` |
-| OpenRouter | required | set any model slug, e.g. `anthropic/claude-opus-5` |
-| Ollama (local) | none | fully private; see below |
+| Ollama (local) | none | fully private, no account at all; see below |
 | anything OpenAI-compatible | depends | pick OpenAI/OpenRouter and override the Base URL |
 
 **Ollama**: run a model locally and nothing leaves your machine at all.

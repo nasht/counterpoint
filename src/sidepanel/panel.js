@@ -23,7 +23,7 @@ for (const [id, p] of Object.entries(PROVIDERS)) {
 
 async function loadSettings() {
   const { cp_settings: s = {} } = await api.storage.local.get("cp_settings");
-  providerSel.value = s.provider ?? "anthropic";
+  providerSel.value = s.provider ?? "openrouter";
   $("model").value = s.model ?? "";
   $("baseurl").value = s.baseUrl ?? "";
   $("remember").checked = s.remember ?? false;
@@ -33,9 +33,13 @@ async function loadSettings() {
 async function reflectProvider() {
   const p = PROVIDERS[providerSel.value];
   $("model").placeholder = p.defaultModel || "e.g. anthropic/claude-opus-5";
-  $("model-hint").textContent = p.defaultModel
-    ? `Blank uses the default: ${p.defaultModel}`
-    : "Required for this provider.";
+  $("model-hint").textContent =
+    providerSel.value === "openrouter"
+      ? `Blank uses the free default: ${p.defaultModel}. A free key (no card) from openrouter.ai/keys is all you need.`
+      : p.defaultModel
+        ? `Blank uses the default: ${p.defaultModel}`
+        : "Required for this provider.";
+  populateFreeModels(providerSel.value);
   $("baseurl").placeholder = p.defaultBaseUrl;
   $("key-row").hidden = !p.needsKey;
   $("remember-row").hidden = !p.needsKey;
@@ -46,6 +50,31 @@ async function reflectProvider() {
   }
 }
 providerSel.addEventListener("change", reflectProvider);
+
+// Offer OpenRouter's current no-cost models as suggestions so the hardcoded
+// default can't rot into a dead slug. Best-effort; silence any failure.
+let freeModelsLoaded = false;
+async function populateFreeModels(provider) {
+  const list = $("model-options");
+  if (provider !== "openrouter") {
+    list.replaceChildren();
+    freeModelsLoaded = false;
+    return;
+  }
+  if (freeModelsLoaded) return;
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/models");
+    const { data = [] } = await res.json();
+    const free = data
+      .filter((m) => m.id.endsWith(":free"))
+      .map((m) => m.id)
+      .sort();
+    list.replaceChildren(...free.map((id) => new Option(id)));
+    freeModelsLoaded = free.length > 0;
+  } catch {
+    /* offline or blocked - the text input still works */
+  }
+}
 
 $("save-settings").addEventListener("click", async () => {
   const provider = providerSel.value;
