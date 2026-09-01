@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Counterpoint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Every story has another line. Analyse news articles for framing and bias, and hear the other voices - with your own model.",
   "browser_specific_settings": {
     "gecko": {

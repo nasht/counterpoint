@@ -3,6 +3,7 @@ import { getKey, setKey } from "../lib/keys.js";
 import { PROVIDERS } from "../providers/index.js";
 import { getSystemPrompt, setSystemPrompt } from "../prompt/build.js";
 import { DEFAULT_SYSTEM_PROMPT } from "../prompt/defaults.js";
+import { BUILD_INFO } from "../lib/version.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,14 +17,27 @@ for (const tab of document.querySelectorAll(".tab")) {
 }
 
 /* ---------- settings ---------- */
-const providerSel = $("provider");
+// Radio group, not a <select>: native select popups can fail to open inside
+// some browsers' side-panel containers.
+const providerGroup = $("provider-group");
 for (const [id, p] of Object.entries(PROVIDERS)) {
-  providerSel.append(new Option(p.label, id));
+  const lab = document.createElement("label");
+  const radio = document.createElement("input");
+  radio.type = "radio";
+  radio.name = "provider";
+  radio.value = id;
+  lab.append(radio, document.createTextNode(p.label));
+  providerGroup.append(lab);
 }
+const getProvider = () => providerGroup.querySelector("input:checked")?.value ?? "openrouter";
+const setProvider = (id) => {
+  const radio = providerGroup.querySelector(`input[value="${CSS.escape(id)}"]`) ?? providerGroup.querySelector("input");
+  radio.checked = true;
+};
 
 async function loadSettings() {
   const { cp_settings: s = {} } = await api.storage.local.get("cp_settings");
-  providerSel.value = s.provider ?? "openrouter";
+  setProvider(s.provider ?? "openrouter");
   $("model").value = s.model ?? "";
   $("baseurl").value = s.baseUrl ?? "";
   $("remember").checked = s.remember ?? false;
@@ -31,25 +45,26 @@ async function loadSettings() {
 }
 
 async function reflectProvider() {
-  const p = PROVIDERS[providerSel.value];
+  const provider = getProvider();
+  const p = PROVIDERS[provider];
   $("model").placeholder = p.defaultModel || "e.g. anthropic/claude-opus-5";
   $("model-hint").textContent =
-    providerSel.value === "openrouter"
+    provider === "openrouter"
       ? `Blank uses the free default: ${p.defaultModel}. A free key (no card) from openrouter.ai/keys is all you need.`
       : p.defaultModel
         ? `Blank uses the default: ${p.defaultModel}`
         : "Required for this provider.";
-  populateFreeModels(providerSel.value);
+  populateFreeModels(provider);
   $("baseurl").placeholder = p.defaultBaseUrl;
   $("key-row").hidden = !p.needsKey;
   $("remember-row").hidden = !p.needsKey;
   $("apikey").value = "";
   if (p.needsKey) {
-    const existing = await getKey(providerSel.value);
+    const existing = await getKey(provider);
     $("apikey").placeholder = existing ? "(key saved - leave blank to keep)" : "paste key";
   }
 }
-providerSel.addEventListener("change", async () => {
+providerGroup.addEventListener("change", async () => {
   // Model slugs and base URLs don't transfer between providers.
   $("model").value = "";
   $("baseurl").value = "";
@@ -84,7 +99,7 @@ async function populateFreeModels(provider) {
 
 // Settings autosave - no Save button to forget.
 async function saveSettings() {
-  const provider = providerSel.value;
+  const provider = getProvider();
   const remember = $("remember").checked;
   await api.storage.local.set({
     cp_settings: {
@@ -281,5 +296,6 @@ function render({ article, analysis, cached }) {
 }
 
 /* ---------- init ---------- */
+$("version").textContent = `v${api.runtime.getManifest().version} · ${BUILD_INFO}`;
 loadSettings();
 loadPrompt();

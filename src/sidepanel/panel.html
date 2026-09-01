@@ -32,8 +32,8 @@
 
   <main id="tab-settings" class="pane">
     <div class="field">
-      <label for="provider">Provider</label>
-      <select id="provider"></select>
+      <span class="field-title">Provider</span>
+      <div id="provider-group" role="radiogroup"></div>
     </div>
     <div class="field">
       <label for="model">Model</label>
@@ -73,6 +73,7 @@
     <p id="prompt-status" class="status" hidden></p>
   </main>
 
+  <footer><span id="version" class="badge"></span></footer>
   <script type="module" src="panel.js"></script>
 </body>
 </html>

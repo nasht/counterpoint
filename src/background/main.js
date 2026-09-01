@@ -5,9 +5,13 @@ import { getSystemPrompt, buildUserMessage, extractJson } from "../prompt/build.
 import { runAnalysis, PROVIDERS, ProviderError } from "../providers/index.js";
 
 // Toolbar button opens the panel: Chrome side panel / Firefox sidebar.
-// Must be the synchronous first call in the listener - both APIs only allow
-// opening from a user gesture, and awaiting anything first loses the gesture.
+// Belt and braces - some Chromium forks honour the declarative behaviour but
+// not sidePanel.open() from onClicked, others the reverse. Register both;
+// whichever path works wins, and double-opening is harmless.
+api.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch((e) => console.error("setPanelBehavior:", e));
 api.action.onClicked.addListener((tab) => {
+  // Must be the synchronous first call - these APIs only allow opening from a
+  // user gesture, and awaiting anything first loses the gesture.
   if (IS_FIREFOX) {
     api.sidebarAction.open();
   } else {
