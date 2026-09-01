@@ -44,21 +44,18 @@ bash scripts/build.sh
 
 ## Bring your own model
 
-**Free by default.** Out of the box Counterpoint uses OpenRouter's free tier -
-sign up at [openrouter.ai/keys](https://openrouter.ai/keys) (no credit card),
-paste the key into Settings, done. Free models are rate-limited and slower,
-and a small free model gives noticeably shallower analysis than a frontier
-one - upgrade the model slug whenever you like.
+Pick a provider in Settings and paste a key. The analysis is only as good as
+the model behind it, so a frontier model is worth the cost here.
 
 | Provider | Key | Notes |
 |---|---|---|
-| OpenRouter (default) | free signup | defaults to a `:free` model; the model field suggests the current free list, or set any paid slug e.g. `anthropic/claude-opus-5` |
 | Anthropic | required | defaults to `claude-opus-5` |
 | OpenAI | required | defaults to `gpt-4o` |
 | Google Gemini | free signup | defaults to `gemini-2.5-flash`; AI Studio keys ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) have a free tier |
 | DeepSeek | required | defaults to `deepseek-chat`; keys from [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
 | Ollama (local) | none | fully private, no account; see below |
 | Custom (OpenAI-compatible) | optional | paste the Base URL of any OpenAI-compatible server (vLLM, LM Studio, LiteLLM, a proxy). Leave the key blank if it needs no auth |
+| OpenRouter | free signup | the out-of-box default, and the weakest option: it defaults to a `:free` model that is rate-limited, slow, and noticeably shallower than a frontier one. Set a paid slug (e.g. `anthropic/claude-opus-5`) or switch provider. Keys from [openrouter.ai/keys](https://openrouter.ai/keys) |
 
 **Ollama**: run a model locally and nothing leaves your machine.
 Ollama blocks browser-extension origins by default, so start it with:
