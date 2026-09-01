@@ -237,6 +237,14 @@ const INTENT_CLASS = {
   promote: "bad",
 };
 
+function normaliseIntent(raw) {
+  const s = String(raw ?? "").toLowerCase();
+  if (!s.trim()) return null;
+  const hit = Object.keys(INTENT_CLASS).find((k) => new RegExp(`\\b${k}`).test(s));
+  // Fall back to the first word so a stray value still renders as a pill.
+  return hit ?? s.trim().split(/\s+/)[0].slice(0, 16);
+}
+
 function el(tag, cls, text) {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
@@ -313,9 +321,13 @@ function render({ article, analysis, cached }) {
   if (intent && (intent.reads_as || intent.why)) {
     const card = el("div", "card");
     card.append(el("h2", null, "What it's built to do"));
-    if (intent.reads_as) {
+    // Small local models answer reads_as with a whole sentence instead of one
+    // of the five words. Pull the word back out rather than rendering a
+    // paragraph inside a pill.
+    const verdict = normaliseIntent(intent.reads_as);
+    if (verdict) {
       const line = el("p", "intent-line");
-      line.append(el("span", `intent-tag ${INTENT_CLASS[String(intent.reads_as).toLowerCase()] ?? "other"}`, String(intent.reads_as)));
+      line.append(el("span", `intent-tag ${INTENT_CLASS[verdict] ?? "other"}`, verdict));
       if (intent.emotion) line.append(document.createTextNode(`aiming for: ${intent.emotion}`));
       card.append(line);
     }
@@ -341,8 +353,9 @@ function render({ article, analysis, cached }) {
     vCard.append(el("p", null, analysis.no_voices_reason ?? "The model found no legitimate alternative reading."));
   }
   for (const v of voices) {
-    vCard.append(el("h3", null, v.owner));
-    vCard.append(el("p", null, v.reading));
+    if (!v?.owner?.trim?.() && !v?.reading?.trim?.()) continue; // unfilled slot
+    if (v.owner) vCard.append(el("h3", null, v.owner));
+    if (v.reading) vCard.append(el("p", null, v.reading));
     if (v.grounded_in) vCard.append(el("p", "grounded", `Grounded in: ${v.grounded_in}`));
   }
   root.append(vCard);

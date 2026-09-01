@@ -6,40 +6,38 @@ import { DEFAULT_SYSTEM_PROMPT } from "./defaults.js";
 const OUTPUT_CONTRACT = `Respond with ONLY a JSON object (no markdown fence, no prose before or after) in exactly this shape:
 
 {
-  "summary": "one-sentence neutral summary of what the article reports",
-  "claims": [{"text": "...", "type": "fact" | "interpretation"}],
-  "frame": {
-    "centred": "whose interests/viewpoint the article centres",
-    "missing": "who is affected but absent or marginal",
-    "notes": "anything notable about placement or emphasis"
-  },
+  "summary": "",
+  "claims": [{"text": "", "type": "fact"}],
+  "frame": {"centred": "", "missing": "", "notes": ""},
   "bias": {
-    "framing":  {"score": 0, "why": "..."},
-    "sourcing": {"score": 0, "why": "..."},
-    "emphasis": {"score": 0, "why": "..."},
-    "language": {"score": 0, "why": "..."}
+    "framing":  {"score": 0, "why": ""},
+    "sourcing": {"score": 0, "why": ""},
+    "emphasis": {"score": 0, "why": ""},
+    "language": {"score": 0, "why": ""}
   },
-  "strongest_point": "the article's single strongest, fairest point",
-  "intent": {
-    "reads_as": "inform" | "explain" | "persuade" | "provoke" | "promote",
-    "emotion": "the specific feeling the piece appears built to produce in the reader, or null if it is not working on the reader's feelings",
-    "why": "what in the writing supports this reading - tone, structure, verb choice, placement"
-  },
-  "voices": [
-    {
-      "owner": "the specific constituency holding this reading",
-      "reading": "how that constituency would read the same facts, 2-4 sentences, third person and attributed to them",
-      "grounded_in": "the fact(s) from the article this reading rests on"
-    }
-  ],
+  "strongest_point": "",
+  "intent": {"reads_as": "<one of: inform, explain, persuade, provoke, promote>", "emotion": "", "why": ""},
+  "voices": [{"owner": "", "reading": "", "grounded_in": ""}],
   "no_voices_reason": null
 }
 
-Scores are integers 0-4, where 0 is exemplary and 4 is severe. If there are no legitimate alternative voices, use "voices": [] and set "no_voices_reason" to a short explanation.
+Every string above is an empty slot for YOU to fill with content about THIS article. The field guide below describes what belongs in each slot - it is a description, not text to copy. Never emit any wording from the field guide as a value.
 
-Each "reading" must be written in the third person and attributed to its owner, hedged as attribution ("Renters may well welcome...", "Buyers could read this as..."). Never first person, never addressed to the reader, never asserted as fact.
+FIELD GUIDE
+- summary: one neutral sentence on what the article reports.
+- claims[].text: an assertion the article makes. claims[].type: "fact" or "interpretation".
+- frame.centred: whose interests or viewpoint the article centres. frame.missing: who is affected but absent or marginal. frame.notes: anything notable about placement or emphasis.
+- bias.*.score: an integer 0-4, where 0 is exemplary and 4 is severe. bias.*.why: a short quote or concrete observation justifying it.
+- strongest_point: the article's single strongest, fairest point.
+- intent.reads_as: EXACTLY one of these five lowercase words and nothing else: inform, explain, persuade, provoke, promote. Not a sentence, not a phrase, not two of them joined. Put your reasoning in intent.why instead. intent.emotion: the specific feeling the piece is built to produce, or null if it is not working on the reader's feelings. intent.why: what in the writing supports that reading.
+- voices[].owner: a named constituency drawn from THIS article's own subject matter - the people it actually concerns. Do not borrow a group from these instructions.
+- voices[].reading: 2-4 sentences giving that constituency's reading of the same facts. Write it in the third person, attributed to that group, in this register: "<GROUP> may well welcome <X>, because...", "<GROUP> could read this as <X>, given...", "<GROUP> are likely to see <X> as...". The angle brackets mark slots to fill from the article; the register is what to copy, never the wording. Never first person, never addressed to the reader, never asserted as fact.
+- voices[].grounded_in: the fact(s) from the article the reading rests on.
+- no_voices_reason: null when there are voices; when "voices" is [], a short explanation instead.
 
-"reads_as" must be exactly one of the five listed strings.`;
+Never return an empty string: if a field genuinely does not apply, use null, or omit the object from its array. An unfilled skeleton is not a valid answer.
+
+Before you answer, check two things: that no value repeats wording from the field guide, and that intent.reads_as is one of the five permitted words.`;
 
 export async function getSystemPrompt() {
   const { cp_system_prompt } = await api.storage.local.get("cp_system_prompt");

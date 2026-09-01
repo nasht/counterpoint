@@ -12,6 +12,15 @@ export async function call({ model, baseUrl, system, user, signal }) {
         model,
         stream: false,
         format: "json",
+        // Hybrid reasoning models (Qwen3) otherwise spend the whole budget
+        // thinking and return no JSON at all.
+        think: false,
+        options: {
+          // Without a cap a small model can loop and emit JSON until it fills
+          // the context - observed with gemma3:4b, which ran past 6,000 tokens
+          // and only stopped on timeout. The OpenAI path already caps this.
+          num_predict: 4096,
+        },
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },

@@ -64,6 +64,34 @@ Ollama blocks browser-extension origins by default, so start it with:
 OLLAMA_ORIGINS='chrome-extension://*,moz-extension://*' ollama serve
 ```
 
+Two more settings matter for this workload:
+
+```sh
+# Counterpoint sends up to 60k chars (~15k tokens). Ollama's default context is
+# 4096, which silently truncates the article out of the window before the model
+# sees it - you get an analysis of the first paragraph and no error.
+OLLAMA_CONTEXT_LENGTH=16384
+# Ollama ignores integrated GPUs unless asked. On an iGPU with shared memory
+# this is usually a large speedup over CPU.
+OLLAMA_IGPU_ENABLE=1
+```
+
+**A warning if you have an AMD iGPU.** ROCm ships no rocblas kernels for some
+recent integrated parts (e.g. the Radeon 780M, gfx1103), and the widely
+suggested workaround - `HSA_OVERRIDE_GFX_VERSION` pointed at a nearby target -
+does not merely run slowly. It silently corrupts inference: on a 780M we saw a
+model emit `ffff...`, return the empty JSON skeleton unfilled, and, worst of
+all, produce fluent, well-formed analysis naming *entirely the wrong
+institutions*. There is no error and the output looks plausible. If ROCm does
+not natively support your GPU, leave the override unset - Ollama will drop
+ROCm and use its Vulkan backend, which is correct and still much faster than
+CPU. Verify with `journalctl --user -u ollama | grep 'inference compute'`.
+
+Small local models need the JSON contract enforced firmly; Counterpoint sends
+`think: false` (hybrid reasoning models otherwise burn the whole budget
+thinking and return no JSON) and caps `num_predict`, after watching one model
+loop past 6,000 tokens and stop only on timeout.
+
 ### Where your key lives
 
 By default the key is held in extension session storage - memory only, gone
