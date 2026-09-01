@@ -1,6 +1,6 @@
 import { api } from "../lib/env.js";
 import { getKey, setKey } from "../lib/keys.js";
-import { PROVIDERS } from "../providers/index.js";
+import { PROVIDERS, usesKey } from "../providers/index.js";
 import { getSystemPrompt, setSystemPrompt } from "../prompt/build.js";
 import { DEFAULT_SYSTEM_PROMPT } from "../prompt/defaults.js";
 import { BUILD_INFO } from "../lib/version.js";
@@ -55,11 +55,19 @@ async function reflectProvider() {
         ? `Blank uses the default: ${p.defaultModel}`
         : "Required for this provider.";
   populateFreeModels(provider);
-  $("baseurl").placeholder = p.defaultBaseUrl;
-  $("key-row").hidden = !p.needsKey;
-  $("remember-row").hidden = !p.needsKey;
+  $("baseurl").placeholder = p.defaultBaseUrl || "https://my-server.example/v1";
+  // A custom server has no default to fall back on, so say so.
+  $("baseurl-hint").textContent = p.requiresBaseUrl
+    ? "Required: the OpenAI-compatible endpoint to POST to, without /chat/completions."
+    : "Leave blank for the provider default. Point at any OpenAI-compatible server.";
+  const wantsKey = usesKey(p);
+  $("key-row").hidden = !wantsKey;
+  $("remember-row").hidden = !wantsKey;
+  $("key-hint").textContent = p.optionalKey
+    ? "Optional - leave blank for a server that needs no auth. Sent only to the Base URL above."
+    : "Sent only to the provider above, from this browser. Never anywhere else.";
   $("apikey").value = "";
-  if (p.needsKey) {
+  if (wantsKey) {
     const existing = await getKey(provider);
     $("apikey").placeholder = existing ? "(key saved - leave blank to keep)" : "paste key";
   }
@@ -117,7 +125,7 @@ function saveSettings() {
     if (typedKey) {
       await setKey(provider, typedKey, remember);
       await reflectProvider();
-    } else if (PROVIDERS[provider].needsKey) {
+    } else if (usesKey(PROVIDERS[provider])) {
       // Re-store the existing key under the (possibly changed) remember mode.
       const existing = await getKey(provider);
       if (existing) await setKey(provider, existing, remember);

@@ -60,7 +60,13 @@ async function analyse({ tabId, force }) {
 
   // Hash the extracted text, not just the URL: two different selections on one
   // page (or a live blog / SPA route) share a URL but are different articles.
-  const key = await cacheKey(article.url, `${provider}/${model || "default"}`, system + article.text);
+  // Include the base URL: with the custom provider, the same model name on two
+  // different servers is two different results.
+  const key = await cacheKey(
+    article.url,
+    `${provider}/${settings.baseUrl || "default"}/${model || "default"}`,
+    system + article.text
+  );
   if (!force) {
     const cached = await cacheGet(key);
     if (cached) return { article: summariseArticle(article), analysis: cached, cached: true };

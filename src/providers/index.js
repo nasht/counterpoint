@@ -2,7 +2,9 @@ import * as anthropic from "./anthropic.js";
 import * as openai from "./openai.js";
 import * as openrouter from "./openrouter.js";
 import * as gemini from "./gemini.js";
+import * as deepseek from "./deepseek.js";
 import * as ollama from "./ollama.js";
+import * as custom from "./custom.js";
 import { api } from "../lib/env.js";
 
 // Free OpenRouter models to try in order when the user hasn't set a model.
@@ -56,6 +58,13 @@ export const PROVIDERS = {
     defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     call: gemini.call,
   },
+  deepseek: {
+    label: "DeepSeek",
+    needsKey: true,
+    defaultModel: "deepseek-chat",
+    defaultBaseUrl: "https://api.deepseek.com/v1",
+    call: deepseek.call,
+  },
   ollama: {
     label: "Ollama (local)",
     needsKey: false,
@@ -63,7 +72,22 @@ export const PROVIDERS = {
     defaultBaseUrl: "http://localhost:11434",
     call: ollama.call,
   },
+  custom: {
+    label: "Custom (OpenAI-compatible)",
+    // Some self-hosted servers want no key at all, so a blank key is allowed;
+    // the panel still offers the field.
+    needsKey: false,
+    optionalKey: true,
+    requiresBaseUrl: true,
+    defaultModel: "",
+    defaultBaseUrl: "",
+    call: custom.call,
+  },
 };
+
+// Providers that should offer an API key field: required for most, optional
+// for a user-supplied server that may or may not authenticate.
+export const usesKey = (p) => Boolean(p.needsKey || p.optionalKey);
 
 export async function runAnalysis({ provider, model, apiKey, baseUrl, system, user, signal, onProgress = () => {} }) {
   const p = PROVIDERS[provider];

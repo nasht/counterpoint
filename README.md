@@ -51,8 +51,9 @@ one - upgrade the model slug whenever you like.
 | Anthropic | required | defaults to `claude-opus-5` |
 | OpenAI | required | defaults to `gpt-4o` |
 | Google Gemini | free signup | defaults to `gemini-2.5-flash`; AI Studio keys ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) have a free tier |
+| DeepSeek | required | defaults to `deepseek-chat`; keys from [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
 | Ollama (local) | none | fully private, no account at all; see below |
-| anything OpenAI-compatible | depends | pick OpenAI/OpenRouter and override the Base URL |
+| Custom (OpenAI-compatible) | optional | paste the Base URL of any OpenAI-compatible server (vLLM, LM Studio, LiteLLM, a proxy). Leave the key blank if it needs no auth |
 
 **Ollama**: run a model locally and nothing leaves your machine at all.
 Ollama blocks browser-extension origins by default; start it with:
