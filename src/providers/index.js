@@ -56,17 +56,18 @@ export const PROVIDERS = {
   },
 };
 
-export async function runAnalysis({ provider, model, apiKey, baseUrl, system, user, signal }) {
+export async function runAnalysis({ provider, model, apiKey, baseUrl, system, user, signal, onProgress = () => {} }) {
   const p = PROVIDERS[provider];
   if (!p) throw new ProviderError("bad_response", `Unknown provider: ${provider}`);
 
   // Blank model + OpenRouter: self-healing free default.
   if (!model && provider === "openrouter") {
-    return callWithFreeFallbacks(p, { apiKey, baseUrl: baseUrl || p.defaultBaseUrl, system, user, signal });
+    return callWithFreeFallbacks(p, { apiKey, baseUrl: baseUrl || p.defaultBaseUrl, system, user, signal }, onProgress);
   }
 
   const resolvedModel = model || p.defaultModel;
   if (!resolvedModel) throw new ProviderError("bad_response", "No model configured - set one in Settings.");
+  onProgress(`Asking ${resolvedModel}…`);
   return p.call({
     model: resolvedModel,
     apiKey,
@@ -77,18 +78,20 @@ export async function runAnalysis({ provider, model, apiKey, baseUrl, system, us
   });
 }
 
-async function callWithFreeFallbacks(p, opts) {
+async function callWithFreeFallbacks(p, opts, onProgress) {
   const { cp_or_free_model } = await api.storage.local.get("cp_or_free_model");
   const candidates = [...new Set([cp_or_free_model, ...FREE_FALLBACKS].filter(Boolean))];
   let lastError = null;
   for (const model of candidates) {
     try {
+      onProgress(`Asking ${model}… (free models can be slow)`);
       const result = await p.call({ ...opts, model });
       if (model !== cp_or_free_model) await api.storage.local.set({ cp_or_free_model: model });
       return { ...result, model };
     } catch (e) {
       if (e instanceof ProviderError && e.kind === "model_gated") {
         lastError = e;
+        onProgress(`${model} unavailable - trying the next free model…`);
         continue; // gated or retired slug - try the next free model
       }
       throw e;

@@ -5,13 +5,24 @@ import { getSystemPrompt, buildUserMessage, extractJson } from "../prompt/build.
 import { runAnalysis, PROVIDERS, ProviderError } from "../providers/index.js";
 
 // Toolbar button opens the panel: Chrome side panel / Firefox sidebar.
-if (IS_FIREFOX) {
-  api.action.onClicked.addListener(() => api.sidebarAction.open());
-} else {
-  api.sidePanel?.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+// Must be the synchronous first call in the listener - both APIs only allow
+// opening from a user gesture, and awaiting anything first loses the gesture.
+api.action.onClicked.addListener((tab) => {
+  if (IS_FIREFOX) {
+    api.sidebarAction.open();
+  } else {
+    api.sidePanel.open({ windowId: tab.windowId }).catch((e) => console.error("sidePanel.open failed:", e));
+  }
+});
+
+// Progress events for the panel's status line; fire-and-forget (the panel
+// may be closed, and nothing must depend on a reply).
+function progress(text) {
+  api.runtime.sendMessage({ type: "CP_PROGRESS", text }).catch(() => {});
 }
 
 async function extractArticle(tabId) {
+  progress("Reading the article…");
   await api.scripting.executeScript({
     target: { tabId },
     files: ["vendor/Readability.js", "src/content/extract.js"],
@@ -55,6 +66,7 @@ async function analyse({ tabId, force }) {
       system,
       user: buildUserMessage(article),
       signal: controller.signal,
+      onProgress: progress,
     }));
   } finally {
     clearTimeout(timer);

@@ -49,7 +49,13 @@ async function reflectProvider() {
     $("apikey").placeholder = existing ? "(key saved - leave blank to keep)" : "paste key";
   }
 }
-providerSel.addEventListener("change", reflectProvider);
+providerSel.addEventListener("change", async () => {
+  // Model slugs and base URLs don't transfer between providers.
+  $("model").value = "";
+  $("baseurl").value = "";
+  await saveSettings();
+  await reflectProvider();
+});
 
 // Offer OpenRouter's current no-cost models as suggestions so the hardcoded
 // default can't rot into a dead slug. Best-effort; silence any failure.
@@ -76,7 +82,8 @@ async function populateFreeModels(provider) {
   }
 }
 
-$("save-settings").addEventListener("click", async () => {
+// Settings autosave - no Save button to forget.
+async function saveSettings() {
   const provider = providerSel.value;
   const remember = $("remember").checked;
   await api.storage.local.set({
@@ -91,14 +98,17 @@ $("save-settings").addEventListener("click", async () => {
   if (typedKey) {
     await setKey(provider, typedKey, remember);
     $("apikey").value = "";
+    await reflectProvider();
   } else if (PROVIDERS[provider].needsKey) {
     // Re-store the existing key under the (possibly changed) remember mode.
     const existing = await getKey(provider);
     if (existing) await setKey(provider, existing, remember);
   }
   flash("settings-status", "Saved.");
-  reflectProvider();
-});
+}
+for (const id of ["model", "baseurl", "apikey", "remember"]) {
+  $(id).addEventListener("change", saveSettings);
+}
 
 /* ---------- prompt ---------- */
 async function loadPrompt() {
@@ -126,20 +136,35 @@ function flash(id, text) {
 $("analyse").addEventListener("click", () => run(false));
 $("reanalyse").addEventListener("click", () => run(true));
 
+let running = false;
+api.runtime.onMessage.addListener((msg) => {
+  if (msg?.type === "CP_PROGRESS" && running) {
+    $("status").textContent = msg.text;
+  }
+});
+
+const WATCHDOG_MS = 5 * 60 * 1000;
+
 async function run(force) {
   const btn = $("analyse");
   const status = $("status");
   btn.disabled = true;
+  running = true;
   $("empty-hint").hidden = true;
   $("results").hidden = true;
   status.hidden = false;
   status.classList.remove("error");
-  status.textContent = "Extracting article and asking the model…";
+  status.textContent = "Starting…";
 
   try {
     const [tab] = await api.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id) throw new Error("No active tab.");
-    const res = await api.runtime.sendMessage({ type: "CP_ANALYSE", tabId: tab.id, force });
+    const res = await Promise.race([
+      api.runtime.sendMessage({ type: "CP_ANALYSE", tabId: tab.id, force }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timed out after 5 minutes. A free-tier model may be overloaded - try again, or set a faster model in Settings.")), WATCHDOG_MS)
+      ),
+    ]);
     if (!res) throw new Error("No response from background script.");
     if (!res.ok) {
       status.classList.add("error");
@@ -155,6 +180,7 @@ async function run(force) {
     status.textContent = e.message ?? String(e);
   } finally {
     btn.disabled = false;
+    running = false;
   }
 }
 
