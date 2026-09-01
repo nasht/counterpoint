@@ -52,21 +52,21 @@ nav { display: flex; gap: 2px; width: 100%; }
 .pane { display: none; padding: 12px; }
 .pane.active { display: block; }
 
-label { display: block; margin-bottom: 12px; font-weight: 600; }
-label input[type="text"], label input[type="password"], select, textarea {
+.field { margin-bottom: 12px; }
+.field > label { display: block; font-weight: 600; }
+.field input[type="text"], .field input[type="password"], select, textarea {
   display: block;
   width: 100%;
   margin-top: 4px;
   padding: 7px 9px;
   font: inherit;
-  font-weight: 400;
   color: var(--fg);
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 6px;
 }
-label.check { font-weight: 400; }
-label.check input { margin-right: 6px; }
+.field.check > label { display: inline; font-weight: 400; }
+.field.check input { margin-right: 6px; }
 textarea { min-height: 320px; resize: vertical; font-family: ui-monospace, monospace; font-size: 12px; }
 
 button {

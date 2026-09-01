@@ -31,27 +31,31 @@
   </main>
 
   <main id="tab-settings" class="pane">
-    <label>Provider
+    <div class="field">
+      <label for="provider">Provider</label>
       <select id="provider"></select>
-    </label>
-    <label>Model
+    </div>
+    <div class="field">
+      <label for="model">Model</label>
       <input id="model" type="text" spellcheck="false" list="model-options" />
       <datalist id="model-options"></datalist>
       <span class="hint" id="model-hint"></span>
-    </label>
-    <label id="baseurl-row">Base URL
+    </div>
+    <div class="field" id="baseurl-row">
+      <label for="baseurl">Base URL</label>
       <input id="baseurl" type="text" spellcheck="false" />
       <span class="hint">Leave blank for the provider default. Point at any OpenAI-compatible server.</span>
-    </label>
-    <label id="key-row">API key
+    </div>
+    <div class="field" id="key-row">
+      <label for="apikey">API key</label>
       <input id="apikey" type="password" spellcheck="false" autocomplete="off" />
       <span class="hint">Sent only to the provider above, from this browser. Never anywhere else.</span>
-    </label>
-    <label class="check" id="remember-row">
+    </div>
+    <div class="field check" id="remember-row">
       <input id="remember" type="checkbox" />
-      Remember key on this device
+      <label for="remember">Remember key on this device</label>
       <span class="hint">Off: the key is held in memory and cleared when the browser closes. On: it is stored unencrypted in extension storage - anyone with access to this computer profile could read it.</span>
-    </label>
+    </div>
     <p class="hint">Changes save automatically.</p>
     <p id="settings-status" class="status" hidden></p>
   </main>
