@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Counterpoint",
+  "version": "0.1.0",
+  "description": "Every story has another line. Analyse news articles for framing and bias, and hear the other voices - with your own model.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "counterpoint@holonicenergy.tech",
+      "strict_min_version": "121.0"
+    }
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "scripts": ["src/background/main.js"],
+    "type": "module"
+  },
+  "sidebar_action": {
+    "default_panel": "src/sidepanel/panel.html",
+    "default_title": "Counterpoint",
+    "default_icon": "icons/icon48.png"
+  },
+  "action": {
+    "default_title": "Counterpoint - open the panel",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

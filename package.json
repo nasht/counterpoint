@@ -1,0 +1,10 @@
+{
+  "name": "counterpoint",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Browser extension: analyse news articles for framing and bias, and hear the other voices - with your own model.",
+  "scripts": {
+    "build": "bash scripts/build.sh"
+  }
+}
