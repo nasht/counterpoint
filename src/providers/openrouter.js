@@ -8,7 +8,7 @@ export async function call(opts) {
   return chatCompletions({
     ...opts,
     extraHeaders: {
-      "HTTP-Referer": "https://github.com/counterpoint-extension",
+      "HTTP-Referer": "https://github.com/nasht/counterpoint",
       "X-Title": "Counterpoint",
     },
   });

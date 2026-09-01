@@ -3,8 +3,16 @@
   "name": "Counterpoint",
   "version": "0.1.3",
   "description": "Every story has another line. Analyse news articles for framing and bias, and hear the other voices - with your own model.",
-  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
-  "host_permissions": ["<all_urls>"],
+  "minimum_chrome_version": "114",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "src/background/main.js",
     "type": "module"
