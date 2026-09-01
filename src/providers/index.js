@@ -1,6 +1,7 @@
 import * as anthropic from "./anthropic.js";
 import * as openai from "./openai.js";
 import * as openrouter from "./openrouter.js";
+import * as gemini from "./gemini.js";
 import * as ollama from "./ollama.js";
 import { api } from "../lib/env.js";
 
@@ -46,6 +47,13 @@ export const PROVIDERS = {
     defaultModel: FREE_FALLBACKS[0],
     defaultBaseUrl: "https://openrouter.ai/api/v1",
     call: openrouter.call,
+  },
+  gemini: {
+    label: "Google Gemini",
+    needsKey: true,
+    defaultModel: "gemini-2.5-flash",
+    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    call: gemini.call,
   },
   ollama: {
     label: "Ollama (local)",

@@ -50,6 +50,7 @@ one - upgrade the model slug whenever you like.
 | OpenRouter (default) | free signup | defaults to a `:free` model; the model field suggests the current free list, or set any paid slug e.g. `anthropic/claude-opus-5` |
 | Anthropic | required | defaults to `claude-opus-5` |
 | OpenAI | required | defaults to `gpt-4o` |
+| Google Gemini | free signup | defaults to `gemini-2.5-flash`; AI Studio keys ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) have a free tier |
 | Ollama (local) | none | fully private, no account at all; see below |
 | anything OpenAI-compatible | depends | pick OpenAI/OpenRouter and override the Base URL |
 
